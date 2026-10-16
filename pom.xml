@@ -65,7 +65,7 @@
     <scala.binary.version>2.12</scala.binary.version>
     <scala.version>2.12.18</scala.version>
     <scala-xml.version>2.4.0</scala-xml.version>
-    <javax.servlet.version>3.1.0</javax.servlet.version>
+    <javax.servlet.version>4.0.1</javax.servlet.version>
     <spark.major.version>3</spark.major.version>
     <sparkbundle.version>3.5</sparkbundle.version>
     <spark.plain.version>35</spark.plain.version>
