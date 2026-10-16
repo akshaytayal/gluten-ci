@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Get Ccache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: '${{ env.CCACHE_DIR }}'
           key: ccache-almalinux8-release-default-${{github.sha}}
@@ -282,7 +282,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Get Ccache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: '${{ env.CCACHE_DIR }}'
           key: ccache-almalinux8-release-default-${{runner.arch}}-${{github.sha}}
@@ -514,7 +514,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Get Ccache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: '${{ env.CCACHE_DIR }}'
           key: ccache-enhanced-almalinux8-release-default-${{github.sha}}
