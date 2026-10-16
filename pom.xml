@@ -1593,6 +1593,20 @@
           <scope>provided</scope>
         </dependency>
       </dependencies>
+      <!-- FORK CI ONLY (not for upstream): Spark 4.3.0 is not released yet; resolve the
+           v4.3.0-rc2 artifacts from the ASF staging repository. -->
+      <repositories>
+        <repository>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+          <id>apache-spark-4.3.0-rc2-staging</id>
+          <url>https://repository.apache.org/content/repositories/orgapachespark-1538/</url>
+        </repository>
+      </repositories>
       <build>
         <plugins>
           <plugin>
