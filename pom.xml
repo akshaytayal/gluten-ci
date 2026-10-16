@@ -129,7 +129,7 @@
     <!-- Maven version for build/mvn wrapper script -->
     <maven.version>3.9.16</maven.version>
     <junit5.version>5.11.4</junit5.version>
-    <flexmark.version>0.62.2</flexmark.version>
+    <flexmark.version>0.64.8</flexmark.version>
 
     <!-- Package name to use when relocating shaded classes -->
     <gluten.shade.packageName>org.apache.gluten.shaded</gluten.shade.packageName>
