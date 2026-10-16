@@ -1330,7 +1330,7 @@ class GlutenKeyGroupedPartitioningSuite
                       SQLConf.V2_BUCKETING_PARTIALLY_CLUSTERED_DISTRIBUTION_ENABLED.key ->
                         partiallyClustered.toString,
                       SQLConf.V2_BUCKETING_PARTITION_FILTER_ENABLED.key -> filter.toString,
-                      SQLConf.V2_BUCKETING_ALLOW_JOIN_KEYS_SUBSET_OF_PARTITION_KEYS.key ->
+                      SQLConf.V2_BUCKETING_ALLOW_KEYS_SUBSET_OF_PARTITION_KEYS.key ->
                         allowJoinKeysSubsetOfPartitionKeys.toString
                     ) {
                       val df = sql(s"""
@@ -1426,7 +1426,7 @@ class GlutenKeyGroupedPartitioningSuite
                     pushDownValues.toString,
                   SQLConf.V2_BUCKETING_PARTIALLY_CLUSTERED_DISTRIBUTION_ENABLED.key ->
                     partiallyClustered.toString,
-                  SQLConf.V2_BUCKETING_ALLOW_JOIN_KEYS_SUBSET_OF_PARTITION_KEYS.key ->
+                  SQLConf.V2_BUCKETING_ALLOW_KEYS_SUBSET_OF_PARTITION_KEYS.key ->
                     allowJoinKeysSubsetOfPartitionKeys.toString
                 ) {
 
@@ -1492,7 +1492,7 @@ class GlutenKeyGroupedPartitioningSuite
                   SQLConf.V2_BUCKETING_PUSH_PART_VALUES_ENABLED.key -> pushDownValues.toString,
                   SQLConf.V2_BUCKETING_PARTIALLY_CLUSTERED_DISTRIBUTION_ENABLED.key ->
                     partiallyClustered.toString,
-                  SQLConf.V2_BUCKETING_ALLOW_JOIN_KEYS_SUBSET_OF_PARTITION_KEYS.key ->
+                  SQLConf.V2_BUCKETING_ALLOW_KEYS_SUBSET_OF_PARTITION_KEYS.key ->
                     allowJoinKeysSubsetOfPartitionKeys.toString
                 ) {
                   val df =
@@ -1563,7 +1563,7 @@ class GlutenKeyGroupedPartitioningSuite
           SQLConf.V2_BUCKETING_SHUFFLE_ENABLED.key -> "true",
           SQLConf.V2_BUCKETING_PUSH_PART_VALUES_ENABLED.key -> pushdownValues.toString,
           SQLConf.V2_BUCKETING_PARTIALLY_CLUSTERED_DISTRIBUTION_ENABLED.key -> "false",
-          SQLConf.V2_BUCKETING_ALLOW_JOIN_KEYS_SUBSET_OF_PARTITION_KEYS.key -> "true"
+          SQLConf.V2_BUCKETING_ALLOW_KEYS_SUBSET_OF_PARTITION_KEYS.key -> "true"
         ) {
           val df = createJoinTestDF(Seq("id" -> "item_id"))
           val shuffles = collectShuffles(df.queryExecution.executedPlan)
@@ -1614,7 +1614,7 @@ class GlutenKeyGroupedPartitioningSuite
               SQLConf.V2_BUCKETING_PUSH_PART_VALUES_ENABLED.key -> allowPushDown.toString,
               SQLConf.V2_BUCKETING_PARTIALLY_CLUSTERED_DISTRIBUTION_ENABLED.key ->
                 partiallyClustered.toString,
-              SQLConf.V2_BUCKETING_ALLOW_JOIN_KEYS_SUBSET_OF_PARTITION_KEYS.key -> "true",
+              SQLConf.V2_BUCKETING_ALLOW_KEYS_SUBSET_OF_PARTITION_KEYS.key -> "true",
               SQLConf.V2_BUCKETING_ALLOW_COMPATIBLE_TRANSFORMS.key -> "true"
             ) {
               val df = sql(s"""
@@ -1684,7 +1684,7 @@ class GlutenKeyGroupedPartitioningSuite
               SQLConf.REQUIRE_ALL_CLUSTER_KEYS_FOR_CO_PARTITION.key -> "false",
               SQLConf.V2_BUCKETING_PUSH_PART_VALUES_ENABLED.key -> "true",
               SQLConf.V2_BUCKETING_PARTIALLY_CLUSTERED_DISTRIBUTION_ENABLED.key -> "false",
-              SQLConf.V2_BUCKETING_ALLOW_JOIN_KEYS_SUBSET_OF_PARTITION_KEYS.key ->
+              SQLConf.V2_BUCKETING_ALLOW_KEYS_SUBSET_OF_PARTITION_KEYS.key ->
                 allowJoinKeysSubsetOfPartitionKeys.toString,
               SQLConf.V2_BUCKETING_ALLOW_COMPATIBLE_TRANSFORMS.key -> "true"
             ) {
@@ -1890,7 +1890,7 @@ class GlutenKeyGroupedPartitioningSuite
       SQLConf.V2_BUCKETING_SHUFFLE_ENABLED.key -> "true",
       SQLConf.V2_BUCKETING_PUSH_PART_VALUES_ENABLED.key -> "true",
       SQLConf.V2_BUCKETING_PARTIALLY_CLUSTERED_DISTRIBUTION_ENABLED.key -> "false",
-      SQLConf.V2_BUCKETING_ALLOW_JOIN_KEYS_SUBSET_OF_PARTITION_KEYS.key -> "true"
+      SQLConf.V2_BUCKETING_ALLOW_KEYS_SUBSET_OF_PARTITION_KEYS.key -> "true"
     ) {
       val df = createJoinTestDF(Seq("id" -> "item_id"))
       val shuffles = collectShuffles(df.queryExecution.executedPlan)
