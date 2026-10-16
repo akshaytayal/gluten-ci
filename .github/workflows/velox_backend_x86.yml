@@ -1671,6 +1671,17 @@ jobs:
         with:
           name: velox-native-lib-centos-8-${{github.sha}}
           path: ./cpp/build/releases/
+      - name: Install Spark 4.3.0 RC2 resources (FORK CI ONLY)
+        run: |
+          # Spark 4.3.0 is not released and the CI image has no /opt/shims/spark43 yet.
+          sed -e "s#^  local mirror_host=.*#  local mirror_host='https://dist.apache.org/repos/dist/dev/spark/v4.3.0-rc2-bin/'#" \
+              -e "s#^  local mirror_host2=.*#  local mirror_host2='https://dist.apache.org/repos/dist/dev/spark/v4.3.0-rc2-bin/'#" \
+              -e "s#^  local url_query=.*#  local url_query=''#" \
+              -e 's#^  local url_path=.*#  local url_path=""#' \
+              -e 's#if \[ "$(command -v shasum)" \]; then#if false; then#' \
+              .github/workflows/util/install-spark-resources.sh > /tmp/install-spark-rc.sh
+          bash /tmp/install-spark-rc.sh 4.3
+          ls /opt/shims/spark43/spark_home/assembly/target/scala-2.13/jars/spark-sql_2.13-4.3.0.jar
       - name: Prepare
         run: |
           dnf install -y python3.11 python3.11-pip python3.11-devel && \
@@ -1746,6 +1757,17 @@ jobs:
         with:
           name: velox-native-lib-centos-8-${{github.sha}}
           path: ./cpp/build/releases/
+      - name: Install Spark 4.3.0 RC2 resources (FORK CI ONLY)
+        run: |
+          # Spark 4.3.0 is not released and the CI image has no /opt/shims/spark43 yet.
+          sed -e "s#^  local mirror_host=.*#  local mirror_host='https://dist.apache.org/repos/dist/dev/spark/v4.3.0-rc2-bin/'#" \
+              -e "s#^  local mirror_host2=.*#  local mirror_host2='https://dist.apache.org/repos/dist/dev/spark/v4.3.0-rc2-bin/'#" \
+              -e "s#^  local url_query=.*#  local url_query=''#" \
+              -e 's#^  local url_path=.*#  local url_path=""#' \
+              -e 's#if \[ "$(command -v shasum)" \]; then#if false; then#' \
+              .github/workflows/util/install-spark-resources.sh > /tmp/install-spark-rc.sh
+          bash /tmp/install-spark-rc.sh 4.3
+          ls /opt/shims/spark43/spark_home/assembly/target/scala-2.13/jars/spark-sql_2.13-4.3.0.jar
       - name: Build and Run unit test for Spark 4.3 (slow tests, ${{ matrix.suite }})
         run: |
           cd $GITHUB_WORKSPACE/
