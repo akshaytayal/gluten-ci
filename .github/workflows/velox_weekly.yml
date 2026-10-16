@@ -68,7 +68,7 @@ jobs:
           chmod +x /usr/local/bin/jq
           gh --version && jq --version
       - name: Get Ccache from Apache Stash
-        uses: apache/infrastructure-actions/stash/restore@69afc125e535c4c41e7f1b7470f583087e0f344b
+        uses: apache/infrastructure-actions/stash/restore@604ea75ed9459f90d7a15aa124d765671158da3c
         with:
           path: '${{ env.CCACHE_DIR }}'
           key: ccache-weekly-centos-${{ matrix.os }}-${{ hashFiles('ep/build-velox/src/**') }}
@@ -138,7 +138,7 @@ jobs:
           chmod +x /usr/local/bin/jq
           gh --version && jq --version
       - name: Get Ccache from Apache Stash
-        uses: apache/infrastructure-actions/stash/restore@69afc125e535c4c41e7f1b7470f583087e0f344b
+        uses: apache/infrastructure-actions/stash/restore@604ea75ed9459f90d7a15aa124d765671158da3c
         with:
           path: '${{ env.CCACHE_DIR }}'
           key: ccache-weekly-ubuntu-${{ matrix.os }}-${{ hashFiles('ep/build-velox/src/**') }}
@@ -227,7 +227,7 @@ jobs:
           chmod +x /usr/local/bin/jq
           gh --version && jq --version
       - name: Get Ccache from Apache Stash
-        uses: apache/infrastructure-actions/stash/restore@69afc125e535c4c41e7f1b7470f583087e0f344b
+        uses: apache/infrastructure-actions/stash/restore@604ea75ed9459f90d7a15aa124d765671158da3c
         with:
           path: '${{ env.CCACHE_DIR }}'
           key: ccache-weekly-openeuler-${{runner.arch}}-${{ hashFiles('ep/build-velox/src/**') }}
@@ -286,7 +286,7 @@ jobs:
           chmod +x /usr/local/bin/jq
           gh --version && jq --version
       - name: Get Ccache from Apache Stash
-        uses: apache/infrastructure-actions/stash/restore@69afc125e535c4c41e7f1b7470f583087e0f344b
+        uses: apache/infrastructure-actions/stash/restore@604ea75ed9459f90d7a15aa124d765671158da3c
         with:
           path: '${{ env.CCACHE_DIR }}'
           key: ccache-weekly-openeuler-vcpkg-${{runner.arch}}-${{ hashFiles('ep/build-velox/src/**') }}
@@ -334,7 +334,7 @@ jobs:
       - name: Install Dependencies
         run: brew install wget pkgconfig ccache
       - name: Get Ccache from Apache Stash
-        uses: apache/infrastructure-actions/stash/restore@69afc125e535c4c41e7f1b7470f583087e0f344b
+        uses: apache/infrastructure-actions/stash/restore@604ea75ed9459f90d7a15aa124d765671158da3c
         with:
           path: '${{ env.CCACHE_DIR }}'
           key: ccache-weekly-macos-${{runner.arch}}-${{ hashFiles('ep/build-velox/src/**') }}
