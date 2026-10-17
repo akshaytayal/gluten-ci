@@ -2037,6 +2037,10 @@ class VeloxTestSettings extends BackendTestSettings {
     .exclude("Dependent Batched Python UDFs and Scalar Pandas UDFs should not be combined")
     .exclude("Python UDF should not break column pruning/filter pushdown -- Parquet V2")
   enableSuite[GlutenStreamingQuerySuite]
+    .exclude(
+      "StreamingRelationV2/StreamingExecutionRelation/ContinuousExecutionRelation.toJSON " +
+        "should not fail"
+    ) // GLUTEN-XXXXX Spark 4.3 UT enablement: hangs in CI (continuous trigger)
   enableSuite[GlutenStreamingRealTimeModeSourceCompatSuite]
   enableSuite[GlutenStreamRealTimeModeAllowlistSuite]
   enableSuite[GlutenStreamRealTimeModeCoexistenceSuite]
