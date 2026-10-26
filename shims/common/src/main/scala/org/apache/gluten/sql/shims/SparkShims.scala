@@ -220,6 +220,12 @@ trait SparkShims {
     None
   }
 
+  /**
+   * Returns Spark's error for a data file that does not exist when a native scan reads it, or None
+   * to keep the native error.
+   */
+  def fileNotExistError(path: String, cause: Exception): Option[Throwable] = None
+
   def unsupportedCodec: Seq[CompressionCodecName] = {
     Seq(CompressionCodecName.LZO, CompressionCodecName.BROTLI)
   }

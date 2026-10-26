@@ -113,6 +113,14 @@ trait BasicScanExecTransformer extends LeafTransformSupport with BaseDataSource 
   /** Returns the file format properties. */
   def getProperties: Map[String, String] = Map.empty
 
+  /**
+   * Whether this scan ignores missing files, resolved like Spark's `FileSourceOptions`: the
+   * `ignoreMissingFiles` data source option, falling back to `spark.sql.files.ignoreMissingFiles`.
+   * Passed to the native scan, where it overrides the session config. None keeps the session
+   * config.
+   */
+  def ignoreMissingFiles: Option[Boolean] = None
+
   def getInputStats: Option[InputStats] = Option.empty
 
   override def getSplitInfos: Seq[SplitInfo] = {
@@ -203,9 +211,13 @@ trait BasicScanExecTransformer extends LeafTransformSupport with BaseDataSource 
 
     // used by CH backend
     val mergeTreeFlag = if (this.fileFormat == ReadFileFormat.MergeTreeReadFormat) "1" else "0"
+    val ignoreMissingFilesConfig =
+      ignoreMissingFiles.map(v => s"ignoreMissingFiles=${if (v) 1 else 0}\n").getOrElse("")
     val optimization =
       BackendsApiManager.getTransformerApiInstance.packPBMessage(
-        StringValue.newBuilder.setValue(s"isMergeTree=$mergeTreeFlag\n").build)
+        StringValue.newBuilder
+          .setValue(s"isMergeTree=$mergeTreeFlag\n$ignoreMissingFilesConfig")
+          .build)
     val enhancement = if (requiredMapSubfields.isEmpty) {
       null
     } else {

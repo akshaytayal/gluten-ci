@@ -310,6 +310,23 @@ bool SubstraitParser::configSetInOptimization(
   return false;
 }
 
+std::optional<bool> SubstraitParser::getBoolConfigInOptimization(
+    const ::substrait::extensions::AdvancedExtension& extension,
+    const std::string& config) {
+  if (extension.optimization_size() == 0) {
+    return std::nullopt;
+  }
+  google::protobuf::StringValue msg;
+  extension.optimization(0).UnpackTo(&msg);
+  const auto pos = msg.value().find(config);
+  if (pos == std::string::npos) {
+    return std::nullopt;
+  }
+  const auto value = msg.value().substr(pos + config.size(), 1);
+  VELOX_USER_CHECK(value == "0" || value == "1", "Invalid value for {}{}", config, value);
+  return value == "1";
+}
+
 bool SubstraitParser::checkWindowFunction(
     const ::substrait::extensions::AdvancedExtension& extension,
     const std::string& targetFunction) {

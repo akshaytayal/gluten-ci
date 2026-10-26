@@ -500,9 +500,6 @@ class VeloxTestSettings extends BackendTestSettings {
     .exclude("SPARK-39830: Reading ORC table that requires type promotion may throw AIOOBE")
     // Unsupported.
     .exclude("SPARK-37463: read/write Timestamp ntz to Orc with different time zone")
-    .exclude(
-      "SPARK-55857: Enabling/disabling ignoreMissingFiles"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
   enableSuite[GlutenOrcV2QuerySuite]
     // feature not supported
     .exclude("Enabling/disabling ignoreCorruptFiles")
@@ -512,9 +509,6 @@ class VeloxTestSettings extends BackendTestSettings {
     .exclude("SPARK-20728 Make ORCFileFormat configurable between sql/hive and sql/core")
     // Unsupported.
     .exclude("SPARK-37463: read/write Timestamp ntz to Orc with different time zone")
-    .exclude(
-      "SPARK-55857: Enabling/disabling ignoreMissingFiles"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
   enableSuite[GlutenOrcSourceSuite]
     // Rewrite to disable Spark's columnar reader.
     // date result miss match
@@ -613,9 +607,6 @@ class VeloxTestSettings extends BackendTestSettings {
     // Rewrite because the filter after datasource is not needed.
     .exclude(
       "SPARK-26677: negated null-safe equality comparison should not filter matched row groups")
-    .exclude(
-      "SPARK-55857: Enabling/disabling ignoreMissingFiles"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
   enableSuite[GlutenParquetV2QuerySuite]
     // Unsupport spark.sql.files.ignoreCorruptFiles.
     .exclude("Enabling/disabling ignoreCorruptFiles")
@@ -624,9 +615,6 @@ class VeloxTestSettings extends BackendTestSettings {
     // Rewrite because the filter after datasource is not needed.
     .exclude(
       "SPARK-26677: negated null-safe equality comparison should not filter matched row groups")
-    .exclude(
-      "SPARK-55857: Enabling/disabling ignoreMissingFiles"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
   enableSuite[GlutenParquetV1SchemaPruningSuite]
   enableSuite[GlutenParquetV2SchemaPruningSuite]
   enableSuite[GlutenParquetRebaseDatetimeV1Suite]
@@ -1151,9 +1139,6 @@ class VeloxTestSettings extends BackendTestSettings {
     .excludeByPrefix("SPARK-22790")
     // plan is different cause metric is different, rewrite
     .excludeByPrefix("SPARK-25237")
-    // error msg from velox is different & reader options is not supported, rewrite
-    .exclude("Enabling/disabling ignoreMissingFiles using parquet")
-    .exclude("Enabling/disabling ignoreMissingFiles using orc")
     .exclude("Spark native readers should respect spark.sql.caseSensitive - orc")
     .exclude("Return correct results when data columns overlap with partition columns")
     .exclude("Return correct results when data columns overlap with partition " +

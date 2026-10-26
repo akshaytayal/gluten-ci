@@ -441,6 +441,14 @@ class Spark42Shims extends SparkShims {
     scan.stream
   }
 
+  // Same as QueryExecutionErrors.fileNotExistError, which is private[sql].
+  override def fileNotExistError(path: String, cause: Exception): Option[Throwable] =
+    Some(
+      new SparkException(
+        errorClass = "FAILED_READ_FILE.FILE_NOT_EXIST",
+        messageParameters = Map("path" -> path),
+        cause = cause))
+
   override def unsupportedCodec: Seq[CompressionCodecName] = {
     Seq(CompressionCodecName.LZO, CompressionCodecName.BROTLI, CompressionCodecName.LZ4_RAW)
   }

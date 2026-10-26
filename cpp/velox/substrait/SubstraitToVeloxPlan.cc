@@ -30,6 +30,7 @@
 #include "operators/reader/KafkaConnector.h"
 #include "operators/reader/KafkaSplitInfo.h"
 #endif
+#include "velox/connectors/hive/HiveConfig.h"
 #include "velox/connectors/hive/HiveDataSink.h"
 #include "velox/connectors/hive/iceberg/IcebergColumnHandle.h"
 #include "velox/exec/TableWriter.h"
@@ -1699,9 +1700,24 @@ core::PlanNodePtr SubstraitToVeloxPlanConverter::toVeloxPlan(const ::substrait::
     connectorId = connectorIds_.cudfHive;
 #endif
   }
+  // The scan's ignoreMissingFiles data source option, falling back to the SQL conf, overrides the
+  // session-level value so that scans in the same task can use different values.
+  std::unordered_map<std::string, std::string> tableParameters;
+  if (readRel.has_advanced_extension()) {
+    if (const auto ignoreMissingFiles =
+            SubstraitParser::getBoolConfigInOptimization(readRel.advanced_extension(), "ignoreMissingFiles=")) {
+      tableParameters[connector::hive::HiveConfig::kIgnoreMissingFilesSession] = *ignoreMissingFiles ? "true" : "false";
+    }
+  }
   common::SubfieldFilters subfieldFilters;
   tableHandle = std::make_shared<connector::hive::HiveTableHandle>(
-      connectorId, "hive_table", std::move(subfieldFilters), remainingFilter, dataColumns);
+      connectorId,
+      "hive_table",
+      std::move(subfieldFilters),
+      remainingFilter,
+      dataColumns,
+      /*indexColumns=*/std::vector<std::string>{},
+      tableParameters);
 
   // Required subfields of scan columns (map-key pruning), from the RequiredSubfieldsExtension the
   // ScanMapKeyPruning rule packs into the ReadRel advanced extension. Each path is transported as
