@@ -23,11 +23,11 @@ import org.apache.gluten.substrait.rel.LocalFilesNode.ReadFileFormat
 import org.apache.gluten.utils.FileIndexUtil
 
 import org.apache.spark.Partition
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.{FileSourceOptions, TableIdentifier}
 import org.apache.spark.sql.catalyst.csv.CSVExprUtils
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Expression, PlanExpression}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
-import org.apache.spark.sql.catalyst.util.truncatedString
+import org.apache.spark.sql.catalyst.util.{truncatedString, CaseInsensitiveMap}
 import org.apache.spark.sql.connector.read.streaming.SparkDataStream
 import org.apache.spark.sql.execution.FileSourceScanExecShim
 import org.apache.spark.sql.execution.adaptive.InputStats
@@ -253,6 +253,9 @@ abstract class FileSourceScanExecTransformerBase(
       case _ => Map.empty
     }
   }
+
+  override def ignoreMissingFiles: Option[Boolean] =
+    Some(new FileSourceOptions(CaseInsensitiveMap(relation.options)).ignoreMissingFiles)
 
   @transient override lazy val fileFormat: ReadFileFormat =
     BackendsApiManager.getSettings.getSubstraitReadFileFormatV1(relation.fileFormat)

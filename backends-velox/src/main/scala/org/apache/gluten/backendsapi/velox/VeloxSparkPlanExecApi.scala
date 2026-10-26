@@ -28,6 +28,7 @@ import org.apache.gluten.shuffle.NeedCustomColumnarBatchSerializer
 import org.apache.gluten.sql.shims.SparkShimLoader
 import org.apache.gluten.substrait.SubstraitContext
 import org.apache.gluten.substrait.expression.{ExpressionBuilder, ExpressionNode, WindowFunctionNode}
+import org.apache.gluten.utils.VeloxIntermediateData
 import org.apache.gluten.vectorized.{ColumnarBatchSerializer, ColumnarBatchSerializeResult}
 
 import org.apache.spark.{ShuffleDependency, SparkEnv}
@@ -42,7 +43,7 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, CollectList, CollectSet}
 import org.apache.spark.sql.catalyst.expressions.objects.{AssertNotNull, StaticInvoke}
-import org.apache.spark.sql.catalyst.optimizer.BuildSide
+import org.apache.spark.sql.catalyst.optimizer.{BuildSide, NormalizeNaNAndZero}
 import org.apache.spark.sql.catalyst.plans.{ExistenceJoin, FullOuter, InnerLike, JoinType, LeftAnti, LeftOuter, LeftSemi, RightOuter}
 import org.apache.spark.sql.catalyst.plans.physical._
 import org.apache.spark.sql.execution._
@@ -100,6 +101,14 @@ class VeloxSparkPlanExecApi extends SparkPlanExecApi with Logging {
       right,
       left,
       newExpr)
+  }
+
+  /** Maps -0.0 to 0.0 and every NaN to the canonical NaN, like Spark. */
+  override def genNormalizeNaNAndZeroTransformer(
+      substraitExprName: String,
+      child: ExpressionTransformer,
+      original: NormalizeNaNAndZero): ExpressionTransformer = {
+    GenericExpressionTransformer(substraitExprName, child, original)
   }
 
   override def genAtLeastNNonNullsTransformer(
@@ -1664,7 +1673,8 @@ class VeloxSparkPlanExecApi extends SparkPlanExecApi with Logging {
                   }
               }
 
-            val childrenNodeList = aggregateFunc.children
+            val childrenNodeList = VeloxIntermediateData
+              .getRawInputs(aggregateFunc)
               .map(
                 ExpressionConverter
                   .replaceWithExpressionTransformer(_, originalInputAttributes)

@@ -16,6 +16,8 @@
  */
 package org.apache.spark.sql.catalyst.expressions
 
+import org.apache.gluten.exception.GlutenException
+
 import org.apache.spark.sql.GlutenExpressionOffloadTracker
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
@@ -653,6 +655,39 @@ class GlutenDateExpressionsSuite
           BooleanType
         )
       }
+    }
+  }
+
+  testGluten("TruncTimestamp of Long.MinValue overflows with ArithmeticException") {
+    // Velox's Spark date_trunc raises the "long overflow" arithmetic error natively, like
+    // vanilla Spark does. Gluten surfaces native errors as GlutenException rather than
+    // java.lang.ArithmeticException, so assert the wrapper type and the overflow message.
+    val minTimestamp = Literal.create(Long.MinValue, TimestampType)
+    Seq(UTC, LA).foreach {
+      zid =>
+        withDefaultTimeZone(zid) {
+          withSQLConf(SQLConf.SESSION_LOCAL_TIMEZONE.key -> zid.getId) {
+            Seq(
+              "YEAR",
+              "QUARTER",
+              "MONTH",
+              "WEEK",
+              "DAY",
+              "HOUR",
+              "MINUTE",
+              "SECOND",
+              "MILLISECOND").foreach {
+              fmt =>
+                val e = intercept[Exception] {
+                  checkEvaluation(
+                    TruncTimestamp(Literal.create(fmt, StringType), minTimestamp),
+                    null)
+                }.getCause
+                assert(e.isInstanceOf[GlutenException], s"$fmt in $zid: $e")
+                assert(e.getMessage.contains("long overflow"), s"$fmt in $zid: $e")
+            }
+          }
+        }
     }
   }
 }

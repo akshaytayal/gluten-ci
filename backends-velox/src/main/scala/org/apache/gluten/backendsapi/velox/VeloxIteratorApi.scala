@@ -19,6 +19,7 @@ package org.apache.gluten.backendsapi.velox
 import org.apache.gluten.backendsapi.{BackendsApiManager, IteratorApi}
 import org.apache.gluten.backendsapi.velox.VeloxIteratorApi.unescapePathName
 import org.apache.gluten.config.{GlutenConfig, VeloxConfig}
+import org.apache.gluten.exception.GlutenException
 import org.apache.gluten.execution._
 import org.apache.gluten.iterator.Iterators
 import org.apache.gluten.metrics.{IMetrics, IteratorMetricsJniWrapper}
@@ -265,7 +266,7 @@ class VeloxIteratorApi extends IteratorApi with Logging {
     val itrMetrics = IteratorMetricsJniWrapper.create()
 
     Iterators
-      .wrap(resIter.asScala)
+      .wrap(VeloxIteratorApi.translateMissingFileErrors(resIter.asScala))
       .protectInvocationFlow()
       .recycleIterator {
         updateNativeMetrics(itrMetrics.fetch(resIter))
@@ -333,6 +334,31 @@ class VeloxIteratorApi extends IteratorApi with Logging {
 }
 
 object VeloxIteratorApi {
+  // The path in a native error for a data file that does not exist.
+  private val missingFilePath =
+    """(?s).*Error Code: FILE_NOT_FOUND\s+Reason: (?:No such file or directory: )?([^\n]*).*""".r
+
+  /** Rethrows native errors for data files that do not exist as Spark's error for them. */
+  private def translateMissingFileErrors(
+      iter: Iterator[ColumnarBatch]): Iterator[ColumnarBatch] = {
+    def translate[T](body: => T): T = {
+      try {
+        body
+      } catch {
+        case e: GlutenException =>
+          val sparkError = Option(e.getMessage).flatMap {
+            case missingFilePath(path) => SparkShimLoader.getSparkShims.fileNotExistError(path, e)
+            case _ => None
+          }
+          throw sparkError.getOrElse(e)
+      }
+    }
+    new Iterator[ColumnarBatch] {
+      override def hasNext: Boolean = translate(iter.hasNext)
+      override def next(): ColumnarBatch = translate(iter.next())
+    }
+  }
+
   // lookup table to translate '0' -> 0 ... 'F'/'f' -> 15
   private val unhexDigits = {
     val array = Array.fill[Byte](128)(-1)

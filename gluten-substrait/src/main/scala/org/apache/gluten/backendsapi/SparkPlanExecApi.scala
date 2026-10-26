@@ -33,7 +33,7 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.catalyst.expressions.objects.StaticInvoke
-import org.apache.spark.sql.catalyst.optimizer.BuildSide
+import org.apache.spark.sql.catalyst.optimizer.{BuildSide, NormalizeNaNAndZero}
 import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.spark.sql.catalyst.plans.physical.{BroadcastMode, Partitioning}
 import org.apache.spark.sql.execution._
@@ -234,6 +234,17 @@ trait SparkPlanExecApi {
       left: ExpressionTransformer,
       right: ExpressionTransformer,
       original: Expression): ExpressionTransformer
+
+  /**
+   * Transform NormalizeNaNAndZero to Substrait. By default it is a pass-through, which drops the
+   * normalization of -0.0 and NaN.
+   */
+  def genNormalizeNaNAndZeroTransformer(
+      substraitExprName: String,
+      child: ExpressionTransformer,
+      original: NormalizeNaNAndZero): ExpressionTransformer = {
+    ChildTransformer(substraitExprName, child, original)
+  }
 
   /** Transform NaNvl to Substrait. */
   def genNaNvlTransformer(

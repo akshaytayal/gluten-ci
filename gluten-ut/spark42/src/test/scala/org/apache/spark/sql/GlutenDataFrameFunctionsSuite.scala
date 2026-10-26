@@ -17,13 +17,20 @@
 package org.apache.spark.sql
 
 import org.apache.gluten.exception.GlutenException
+import org.apache.gluten.execution.{GlutenPlan, ProjectExecTransformer}
 
 import org.apache.spark.SparkException
+import org.apache.spark.sql.catalyst.expressions.ArrayJoin
+import org.apache.spark.sql.catalyst.optimizer.NormalizeNaNAndZero
+import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanHelper
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{IntegerType, MapType, StringType, StructField, StructType}
 
-class GlutenDataFrameFunctionsSuite extends DataFrameFunctionsSuite with GlutenSQLTestsTrait {
+class GlutenDataFrameFunctionsSuite
+  extends DataFrameFunctionsSuite
+  with GlutenSQLTestsTrait
+  with AdaptiveSparkPlanHelper {
   import testImplicits._
 
   testGluten("map with arrays") {
@@ -408,5 +415,62 @@ class GlutenDataFrameFunctionsSuite extends DataFrameFunctionsSuite with GlutenS
     intercept[AnalysisException] {
       oneRowDF.selectExpr("flatten(null)")
     }
+  }
+
+  testGluten("array_join with nullable nullReplacement under whole-stage codegen") {
+    withTempView("array_join_codegen") {
+      Seq(
+        (Seq[String]("a", null, "b"), ",", "NR"),
+        (Seq[String]("a", null, "b"), ",", null),
+        (Seq[String]("x", "y"), "-", "NR")
+      ).toDF("arr", "delim_col", "repl_col").createOrReplaceTempView("array_join_codegen")
+      spark.catalog.cacheTable("array_join_codegen")
+
+      val query =
+        "SELECT array_join(arr, delim_col, repl_col) FROM array_join_codegen " +
+          "WHERE arr IS NOT NULL AND delim_col IS NOT NULL"
+
+      withSQLConf(SQLConf.CODEGEN_FACTORY_MODE.key -> "CODEGEN_ONLY") {
+        val df = sql(query)
+        // Gluten offloads array_join instead of running it in WholeStageCodegenExec.
+        assert(
+          find(df.queryExecution.executedPlan) {
+            case p: ProjectExecTransformer =>
+              p.projectList.exists(_.find(_.isInstanceOf[ArrayJoin]).isDefined)
+            case _ => false
+          }.isDefined,
+          "expected array_join to be offloaded"
+        )
+        checkAnswer(df, Seq(Row("a,NR,b"), Row(null), Row("x-y")))
+      }
+
+      withSQLConf(
+        SQLConf.WHOLESTAGE_CODEGEN_ENABLED.key -> "false",
+        SQLConf.CODEGEN_FACTORY_MODE.key -> "NO_CODEGEN") {
+        checkAnswer(sql(query), Seq(Row("a,NR,b"), Row(null), Row("x-y")))
+      }
+    }
+  }
+
+  testGluten("SPARK-54918: array set ops normalize -0.0 and NaN in the offloaded project") {
+    def isPositiveZero(d: Double): Boolean = java.lang.Double.doubleToRawLongBits(d) == 0L
+    val df = Seq((Seq(-0.0d, 0.0d, Double.NaN, Double.NaN), Seq(0.0d, Double.NaN)))
+      .toDF("a", "b")
+      .select(array_distinct($"a"), array_union($"a", $"b"), array_intersect($"a", $"b"))
+    val row = df.collect().head
+    Seq(0, 1, 2).foreach {
+      i =>
+        val result = row.getSeq[Double](i)
+        assert(result.length == 2, result)
+        assert(result.exists(isPositiveZero), result)
+        assert(result.exists(_.isNaN), result)
+    }
+    val nodesWithNormalize = collect(df.queryExecution.executedPlan) {
+      case p if p.expressions.exists(_.find(_.isInstanceOf[NormalizeNaNAndZero]).isDefined) => p
+    }
+    assert(nodesWithNormalize.nonEmpty, df.queryExecution.executedPlan)
+    assert(
+      nodesWithNormalize.forall(_.isInstanceOf[GlutenPlan]),
+      df.queryExecution.executedPlan)
   }
 }

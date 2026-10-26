@@ -186,9 +186,9 @@ class VeloxTestSettings extends BackendTestSettings {
     .excludeGlutenTest("from_unixtime")
     // Replaced by a gluten test to pass timezone through config.
     .exclude("months_between")
-    .exclude(
-      "TruncTimestamp of Long.MinValue overflows with ArithmeticException"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
+    // Replaced by a gluten test: the native "long overflow" error surfaces as GlutenException
+    // instead of java.lang.ArithmeticException.
+    .exclude("TruncTimestamp of Long.MinValue overflows with ArithmeticException")
   enableSuite[GlutenDecimalExpressionSuite]
   enableSuite[GlutenDecimalPrecisionSuite]
   enableSuite[GlutenGeneratorExpressionSuite]
@@ -500,9 +500,6 @@ class VeloxTestSettings extends BackendTestSettings {
     .exclude("SPARK-39830: Reading ORC table that requires type promotion may throw AIOOBE")
     // Unsupported.
     .exclude("SPARK-37463: read/write Timestamp ntz to Orc with different time zone")
-    .exclude(
-      "SPARK-55857: Enabling/disabling ignoreMissingFiles"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
   enableSuite[GlutenOrcV2QuerySuite]
     // feature not supported
     .exclude("Enabling/disabling ignoreCorruptFiles")
@@ -512,9 +509,6 @@ class VeloxTestSettings extends BackendTestSettings {
     .exclude("SPARK-20728 Make ORCFileFormat configurable between sql/hive and sql/core")
     // Unsupported.
     .exclude("SPARK-37463: read/write Timestamp ntz to Orc with different time zone")
-    .exclude(
-      "SPARK-55857: Enabling/disabling ignoreMissingFiles"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
   enableSuite[GlutenOrcSourceSuite]
     // Rewrite to disable Spark's columnar reader.
     // date result miss match
@@ -598,7 +592,6 @@ class VeloxTestSettings extends BackendTestSettings {
     .exclude(
       "SPARK-53535: vectorized reader: missing all struct fields, struct with complex fields")
     .exclude("SPARK-54220: vectorized reader: missing all struct fields, struct with NullType only")
-    .exclude("SPARK-54220: NullType") // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
   enableSuite[GlutenParquetV1PartitionDiscoverySuite]
   enableSuite[GlutenParquetV2PartitionDiscoverySuite]
   enableSuite[GlutenParquetProtobufCompatibilitySuite]
@@ -613,9 +606,6 @@ class VeloxTestSettings extends BackendTestSettings {
     // Rewrite because the filter after datasource is not needed.
     .exclude(
       "SPARK-26677: negated null-safe equality comparison should not filter matched row groups")
-    .exclude(
-      "SPARK-55857: Enabling/disabling ignoreMissingFiles"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
   enableSuite[GlutenParquetV2QuerySuite]
     // Unsupport spark.sql.files.ignoreCorruptFiles.
     .exclude("Enabling/disabling ignoreCorruptFiles")
@@ -624,9 +614,6 @@ class VeloxTestSettings extends BackendTestSettings {
     // Rewrite because the filter after datasource is not needed.
     .exclude(
       "SPARK-26677: negated null-safe equality comparison should not filter matched row groups")
-    .exclude(
-      "SPARK-55857: Enabling/disabling ignoreMissingFiles"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
   enableSuite[GlutenParquetV1SchemaPruningSuite]
   enableSuite[GlutenParquetV2SchemaPruningSuite]
   enableSuite[GlutenParquetRebaseDatetimeV1Suite]
@@ -1025,18 +1012,6 @@ class VeloxTestSettings extends BackendTestSettings {
       "SPARK-31620: agg with subquery (whole-stage-codegen = true)",
       "SPARK-31620: agg with subquery (whole-stage-codegen = false)"
     )
-    .exclude(
-      "SPARK-55256: array_agg with RESPECT NULLS preserves nulls"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
-    .exclude(
-      "SPARK-57298: collect_set normalizes NaN and -0.0 for floating-point types"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
-    .exclude(
-      "SPARK-57298: collect_set normalizes NaN and -0.0 nested in complex types"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
-    .exclude(
-      "collect_set with RESPECT NULLS preserves null in set"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
   enableSuite[GlutenDataFrameAsOfJoinSuite]
   enableSuite[GlutenDataFrameComplexTypeSuite]
   enableSuite[GlutenDataFrameFunctionsSuite]
@@ -1047,30 +1022,8 @@ class VeloxTestSettings extends BackendTestSettings {
     .exclude("transform keys function - primitive data types")
     // Overridden.
     .exclude("map with arrays")
-    .exclude(
-      "SPARK-54918: array set ops normalize -0.0 and NaN via VALUES inline table"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
-    .exclude(
-      "SPARK-54918: array_distinct normalizes -0.0 to +0.0"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
-    .exclude(
-      "SPARK-54918: array_distinct normalizes -0.0 to +0.0 - literals"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
-    .exclude(
-      "SPARK-54918: array_intersect normalizes -0.0 to +0.0"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
-    .exclude(
-      "SPARK-54918: array_intersect normalizes -0.0 to +0.0 - literals"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
-    .exclude(
-      "SPARK-54918: array_union normalizes -0.0 to +0.0"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
-    .exclude(
-      "SPARK-54918: array_union normalizes -0.0 to +0.0 - literals"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
-    .exclude(
-      "array_join with nullable nullReplacement under whole-stage codegen"
-    ) // GLUTEN-12569 Spark 4.2 UT enablement (CI-confirmed)
+    // Overridden: asserts vanilla WholeStageCodegenExec, which Gluten replaces.
+    .exclude("array_join with nullable nullReplacement under whole-stage codegen")
   enableSuite[GlutenDataFrameHintSuite]
   enableSuite[GlutenDataFrameImplicitsSuite]
   enableSuite[GlutenDataFrameJoinSuite]
@@ -1185,9 +1138,6 @@ class VeloxTestSettings extends BackendTestSettings {
     .excludeByPrefix("SPARK-22790")
     // plan is different cause metric is different, rewrite
     .excludeByPrefix("SPARK-25237")
-    // error msg from velox is different & reader options is not supported, rewrite
-    .exclude("Enabling/disabling ignoreMissingFiles using parquet")
-    .exclude("Enabling/disabling ignoreMissingFiles using orc")
     .exclude("Spark native readers should respect spark.sql.caseSensitive - orc")
     .exclude("Return correct results when data columns overlap with partition columns")
     .exclude("Return correct results when data columns overlap with partition " +
