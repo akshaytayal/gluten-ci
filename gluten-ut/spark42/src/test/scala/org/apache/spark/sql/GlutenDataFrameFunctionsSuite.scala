@@ -17,10 +17,11 @@
 package org.apache.spark.sql
 
 import org.apache.gluten.exception.GlutenException
-import org.apache.gluten.execution.ProjectExecTransformer
+import org.apache.gluten.execution.{GlutenPlan, ProjectExecTransformer}
 
 import org.apache.spark.SparkException
 import org.apache.spark.sql.catalyst.expressions.ArrayJoin
+import org.apache.spark.sql.catalyst.optimizer.NormalizeNaNAndZero
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanHelper
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.internal.SQLConf
@@ -449,5 +450,27 @@ class GlutenDataFrameFunctionsSuite
         checkAnswer(sql(query), Seq(Row("a,NR,b"), Row(null), Row("x-y")))
       }
     }
+  }
+
+  testGluten("SPARK-54918: array set ops normalize -0.0 and NaN in the offloaded project") {
+    def isPositiveZero(d: Double): Boolean = java.lang.Double.doubleToRawLongBits(d) == 0L
+    val df = Seq((Seq(-0.0d, 0.0d, Double.NaN, Double.NaN), Seq(0.0d, Double.NaN)))
+      .toDF("a", "b")
+      .select(array_distinct($"a"), array_union($"a", $"b"), array_intersect($"a", $"b"))
+    val row = df.collect().head
+    Seq(0, 1, 2).foreach {
+      i =>
+        val result = row.getSeq[Double](i)
+        assert(result.length == 2, result)
+        assert(result.exists(isPositiveZero), result)
+        assert(result.exists(_.isNaN), result)
+    }
+    val nodesWithNormalize = collect(df.queryExecution.executedPlan) {
+      case p if p.expressions.exists(_.find(_.isInstanceOf[NormalizeNaNAndZero]).isDefined) => p
+    }
+    assert(nodesWithNormalize.nonEmpty, df.queryExecution.executedPlan)
+    assert(
+      nodesWithNormalize.forall(_.isInstanceOf[GlutenPlan]),
+      df.queryExecution.executedPlan)
   }
 }
