@@ -22,9 +22,11 @@ import org.apache.gluten.expression.aggregate.{VeloxCollectList, VeloxCollectSet
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.expressions.aggregate._
+import org.apache.spark.sql.catalyst.optimizer.VeloxNormalizeFloatingNumbers
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.TreePattern.{AGGREGATE, AGGREGATE_EXPRESSION}
+import org.apache.spark.util.SparkVersionUtil
 
 import scala.reflect.{classTag, ClassTag}
 
@@ -66,13 +68,26 @@ object CollectRewriteRule {
   private object ToVeloxCollect {
     def unapply(expr: Expression): Option[Expression] = expr match {
       case aggExpr @ AggregateExpression(s: CollectSet, _, _, _, _) if has[VeloxCollectSet] =>
-        val newAggExpr =
-          aggExpr.copy(aggregateFunction = VeloxCollectSet(s.child, getIgnoreNulls(s)))
+        val newAggExpr = aggExpr.copy(aggregateFunction =
+          VeloxCollectSet(normalizeCollectSetInput(s.child), getIgnoreNulls(s)))
         Some(newAggExpr)
       case aggExpr @ AggregateExpression(l: CollectList, _, _, _, _) if has[VeloxCollectList] =>
         val newAggExpr = aggExpr.copy(VeloxCollectList(l.child, getIgnoreNulls(l)))
         Some(newAggExpr)
       case _ => None
+    }
+  }
+
+  /**
+   * Since Spark 4.2 (SPARK-57298), CollectSet normalizes -0.0 to 0.0 and NaN to the canonical NaN,
+   * also in nested types, before deduplicating. Velox's collect_set doesn't, so normalize the input
+   * the same way Spark normalizes join keys.
+   */
+  private def normalizeCollectSetInput(child: Expression): Expression = {
+    if (SparkVersionUtil.gteSpark42) {
+      VeloxNormalizeFloatingNumbers.normalize(child)
+    } else {
+      child
     }
   }
 

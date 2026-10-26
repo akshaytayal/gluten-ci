@@ -17,10 +17,10 @@
 package org.apache.spark.sql
 
 import org.apache.gluten.config.GlutenConfig
-import org.apache.gluten.execution.{HashAggregateExecBaseTransformer, HashAggregateExecTransformer}
+import org.apache.gluten.execution.{GlutenPlan, HashAggregateExecBaseTransformer, HashAggregateExecTransformer}
 
 import org.apache.spark.sql.catalyst.expressions.aggregate.{Partial, PartialMerge}
-import org.apache.spark.sql.catalyst.optimizer.EliminateDistinct
+import org.apache.spark.sql.catalyst.optimizer.{EliminateDistinct, NormalizeNaNAndZero}
 import org.apache.spark.sql.execution.WholeStageCodegenExec
 import org.apache.spark.sql.execution.aggregate.{HashAggregateExec, ObjectHashAggregateExec, SortAggregateExec}
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
@@ -358,6 +358,35 @@ class GlutenDataFrameAggregateSuite extends DataFrameAggregateSuite with GlutenS
         }.isEmpty,
         plan)
     }
+  }
+
+  testGluten("SPARK-57298: collect_set normalizes -0.0 and NaN in the offloaded aggregate") {
+    def isPositiveZero(d: Double): Boolean = java.lang.Double.doubleToRawLongBits(d) == 0L
+    val df = Seq(-0.0d, 0.0d, Double.NaN, Double.NaN, 1.0d)
+      .toDF("v")
+      .repartition(3)
+      .selectExpr(
+        "collect_set(v)",
+        "collect_set(array(v))",
+        "collect_set(named_struct('f', v))",
+        "collect_set(v) RESPECT NULLS")
+    val row = df.collect().head
+    def checkValues(values: Seq[Double]): Unit = {
+      assert(values.length == 3, values)
+      assert(values.exists(isPositiveZero), values)
+      assert(values.exists(_.isNaN), values)
+    }
+    checkValues(row.getSeq[Double](0))
+    checkValues(row.getSeq[scala.collection.Seq[Double]](1).map(_.head))
+    checkValues(row.getSeq[Row](2).map(_.getDouble(0)))
+    checkValues(row.getSeq[Double](3))
+    val plan = df.queryExecution.executedPlan
+    assert(collect(plan) { case agg: HashAggregateExecTransformer => agg }.nonEmpty, plan)
+    val nodesWithNormalize = collect(plan) {
+      case p if p.expressions.exists(_.find(_.isInstanceOf[NormalizeNaNAndZero]).isDefined) => p
+    }
+    assert(nodesWithNormalize.nonEmpty, plan)
+    assert(nodesWithNormalize.forall(_.isInstanceOf[GlutenPlan]), plan)
   }
 
   testGluten("SPARK-22223: ObjectHashAggregate should not introduce unnecessary shuffle") {
