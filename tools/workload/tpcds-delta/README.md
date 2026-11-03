@@ -1,6 +1,6 @@
 # Test on Velox backend with Delta Lake and TPC-DS workload
 
-This workload example is verified with JDK 8, Spark 3.4.4 and Delta 2.4.0.
+This workload example targets JDK 8, Spark 3.5.5 and Delta 3.3.2.
 
 ## Test dataset
 
@@ -9,7 +9,7 @@ executable. To build it, following the steps:
 
 ```bash
 cd ${GLUTEN_HOME}/tools/gluten-it/
-mvn clean install -P spark-3.4,delta
+mvn clean install -P spark-3.5,delta
 ```
 
 Then call the data generator script:

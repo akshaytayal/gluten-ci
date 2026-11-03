@@ -266,8 +266,6 @@ class VeloxTestSettings extends BackendTestSettings {
     .exclude("DDL test with tab separated file")
     .exclude("DDL test parsing decimal type")
     .exclude("test with tab delimiter and double quote")
-    // Arrow not support corrupt record
-    .exclude("SPARK-27873: disabling enforceSchema should not fail columnNameOfCorruptRecord")
     // varchar
     .exclude("SPARK-48241: CSV parsing failure with char/varchar type columns")
   enableSuite[GlutenCSVLegacyTimeParserSuite]
@@ -486,7 +484,6 @@ class VeloxTestSettings extends BackendTestSettings {
   enableSuite[GlutenPruneFileSourcePartitionsSuite]
   enableSuite[GlutenCSVReadSchemaSuite]
   enableSuite[GlutenHeaderCSVReadSchemaSuite]
-    .exclude("change column type from int to long")
   enableSuite[GlutenJsonReadSchemaSuite]
   enableSuite[GlutenOrcReadSchemaSuite]
   enableSuite[GlutenVectorizedOrcReadSchemaSuite]
@@ -561,11 +558,6 @@ class VeloxTestSettings extends BackendTestSettings {
     .exclude("disable bucketing when the output doesn't contain all bucketing columns")
     .excludeByPrefix("bucket coalescing is applied when join expressions match")
   enableSuite[GlutenBucketedWriteWithoutHiveSupportSuite]
-    .exclude("write bucketed data")
-    .exclude("write bucketed data with sortBy")
-    .exclude("write bucketed data without partitionBy")
-    .exclude("write bucketed data without partitionBy with sortBy")
-    .exclude("write bucketed data with bucketing disabled")
   enableSuite[GlutenCreateTableAsSelectSuite]
     // TODO Gluten can not catch the spark exception in Driver side.
     .exclude("CREATE TABLE USING AS SELECT based on the file without write permission")

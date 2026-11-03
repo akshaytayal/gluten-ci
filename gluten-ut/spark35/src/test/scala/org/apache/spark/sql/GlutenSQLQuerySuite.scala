@@ -181,7 +181,8 @@ class GlutenSQLQuerySuite extends SQLQuerySuite with GlutenSQLTestsTrait {
     }
   }
 
-  ignoreGluten("StreamingQueryProgress.numInputRows should be correct") {
+  testGluten("StreamingQueryProgress.numInputRows should be correct") {
+    assume(BackendTestUtils.isVeloxBackendLoaded())
     withTempDir {
       dir =>
         val path = dir.toURI.getPath

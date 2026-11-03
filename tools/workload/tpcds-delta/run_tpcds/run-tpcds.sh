@@ -22,7 +22,7 @@ SPARK_HOME=/PATH_TO_SPARK_HOME/
 
 cat tpcds_delta.scala | ${SPARK_HOME}/bin/spark-shell \
   --master yarn --deploy-mode client \
-  --packages io.delta:delta-core_2.12:2.4.0 \
+  --packages io.delta:delta-spark_2.12:3.3.2 \
   --conf spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension \
   --conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog \
   --conf spark.plugins=org.apache.gluten.GlutenPlugin \

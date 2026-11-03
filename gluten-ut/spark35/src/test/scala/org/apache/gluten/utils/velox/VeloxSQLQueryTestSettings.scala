@@ -30,8 +30,11 @@ object VeloxSQLQueryTestSettings extends SQLQueryTestSettings {
   // Gluten currently only supports `SET spark.sql.legacy.timeParserPolicy=LEGACY`
   // Queries in `date.sql` and `timestamp.sql` are tested in `datetime-legacy.sql`.
   val SUPPORTED_SQL_QUERY_LIST: Set[String] = Set(
+    "ansi/cast.sql",
     "ansi/conditional-functions.sql",
     "ansi/decimalArithmeticOperations.sql",
+    "ansi/literals.sql",
+    "ansi/map.sql",
     "cast.sql",
     "change-column.sql",
     "ceil-floor-with-scale-param.sql",
@@ -58,6 +61,7 @@ object VeloxSQLQueryTestSettings extends SQLQueryTestSettings {
     "double-quoted-identifiers.sql",
     "except.sql",
     "except-all.sql",
+    "extract.sql",
     "group-by.sql",
     "group-by-all.sql",
     "group-by-all-duckdb.sql",
@@ -114,6 +118,8 @@ object VeloxSQLQueryTestSettings extends SQLQueryTestSettings {
     "table-aliases.sql",
     "table-valued-functions.sql",
     "tablesample-negative.sql",
+    "timestamp-ltz.sql",
+    "timestamp-ntz.sql",
     "try-string-functions.sql",
     "subquery/exists-subquery/exists-aggregate.sql",
     "subquery/exists-subquery/exists-basic.sql",

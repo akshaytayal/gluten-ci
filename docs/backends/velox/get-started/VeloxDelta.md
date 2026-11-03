@@ -33,7 +33,6 @@ operators. Delta Lake keeps the table metadata, the transaction log and commits.
 
 | Spark | Delta Lake | Delta Lake jar | Read | Native write | Tested by |
 |---|---|---|---|---|---|
-| 3.4.4 | 2.4.0 | `io.delta:delta-core_2.12:2.4.0` | Offload. Deletion vector scans fall back. | None | Gluten suites |
 | 3.5.5 | 3.3.2 | `io.delta:delta-spark_2.12:3.3.2` (`_2.13` for Scala 2.13) | Offload | Experimental, off by default | Gluten suites, copied Delta Lake suites (Scala 2.12 only) |
 | 4.0.2 | 4.4.1 | `io.delta:delta-spark_4.0_2.13:4.4.1` | Offload | Experimental, off by default | Gluten suites, copied Delta Lake suites tagged `ExtendedSQLTest` |
 | 4.1.1 | 4.4.1 | `io.delta:delta-spark_4.1_2.13:4.4.1` | Offload | Experimental, off by default | Gluten suites, copied Delta Lake suites tagged `ExtendedSQLTest`, nightly Delta Lake job |
@@ -59,7 +58,7 @@ Delta Lake support is compiled in only with the `-Pdelta` Maven profile. Build t
   -DskipTests -Dmaven.compiler.release=17
 ```
 
-`dev/buildbundle-veloxbe.sh` does not pass `-Pdelta`, so its bundle has no Delta Lake support. `dev/release/build-release.sh` passes `-Pdelta` only for Spark 3.4 and 3.5, so its Spark 4.0 and 4.1 bundles have no Delta Lake support either. No Gluten bundle contains the Delta Lake jar, including one built with `-Pdelta`. Add Delta Lake with `--packages` and the coordinate from the table above, which also adds its `delta-storage` dependency. When `io.delta.sql.DeltaSparkSessionExtension` is not on the classpath, Gluten logs `Excluding runtime-incompatible component` and leaves its Delta support off. From code.
+`dev/buildbundle-veloxbe.sh` does not pass `-Pdelta`, so its bundle has no Delta Lake support. `dev/release/build-release.sh` passes `-Pdelta` only for Spark 3.5, so its Spark 4.0 and 4.1 bundles have no Delta Lake support either. No Gluten bundle contains the Delta Lake jar, including one built with `-Pdelta`. Add Delta Lake with `--packages` and the coordinate from the table above, which also adds its `delta-storage` dependency. When `io.delta.sql.DeltaSparkSessionExtension` is not on the classpath, Gluten logs `Excluding runtime-incompatible component` and leaves its Delta support off. From code.
 
 Native writes to HDFS, S3, GCS or ABFS paths need the native library built with `--enable_hdfs=ON`, `--enable_s3=ON`, `--enable_gcs=ON` or `--enable_abfs=ON`. Without that connector, scans of those paths fall back and native writes fail (see [Write problems](#write-problems)). From code.
 

@@ -18,6 +18,7 @@ package org.apache.spark.sql.hive.execution
 
 import org.apache.gluten.config.GlutenConfig
 import org.apache.gluten.execution.FileSourceScanExecTransformer
+import org.apache.gluten.utils.BackendTestUtils
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.Row
@@ -112,7 +113,8 @@ class GlutenHiveSQLQuerySuite extends GlutenHiveSQLQuerySuiteBase {
     }
   }
 
-  ignoreGluten("orc.force.positional.evolution maps Hive ORC columns by position") {
+  testGluten("orc.force.positional.evolution maps Hive ORC columns by position") {
+    assume(BackendTestUtils.isVeloxBackendLoaded())
     val hiveClient: HiveClient =
       spark.sharedState.externalCatalog.unwrapped.asInstanceOf[HiveExternalCatalog].client
 
