@@ -115,7 +115,7 @@ class ScalarFunctionsValidateSuite extends FunctionsValidateSuite {
     }
   }
 
-  testWithMinSparkVersion("array_prepend", "3.5") {
+  test("array_prepend") {
     withTempPath {
       path =>
         Seq[(Array[String], String)](
@@ -1125,7 +1125,7 @@ class ScalarFunctionsValidateSuite extends FunctionsValidateSuite {
     }
   }
 
-  testWithMinSparkVersion("levenshtein with limit", "3.5") {
+  test("levenshtein with limit") {
     runQueryAndCompare("select levenshtein(c_comment, c_address, 3) from customer limit 50") {
       checkGlutenPlan[ProjectExecTransformer]
     }

@@ -19,12 +19,11 @@ package org.apache.gluten.sql.shims
 import org.apache.gluten.GlutenBuildInfo.SPARK_COMPILE_VERSION
 import org.apache.gluten.expression.Sig
 
-import org.apache.spark.{SparkContext, SparkException}
-import org.apache.spark.sql.{AnalysisException, SparkSession}
+import org.apache.spark.SparkException
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{BinaryArithmetic, Expression, RaiseError}
 import org.apache.spark.sql.catalyst.plans.JoinType
-import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.plans.physical.Partitioning
 import org.apache.spark.sql.connector.read.{InputPartition, Scan}
@@ -33,7 +32,6 @@ import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.execution.datasources.parquet.ParquetFilters
 import org.apache.spark.sql.execution.datasources.v2.{BatchScanExec, DataSourceV2ScanExecBase}
-import org.apache.spark.sql.execution.exchange.{BroadcastExchangeLike, ShuffleExchangeLike}
 import org.apache.spark.sql.execution.window.WindowGroupLimitExecShim
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{StringType, StructType}
@@ -106,18 +104,6 @@ trait SparkShims {
 
   def getWindowGroupLimitExec(windowGroupLimitExecShim: WindowGroupLimitExecShim): SparkPlan = null
 
-  // To be compatible with Spark-3.5 and later
-  // See https://github.com/apache/spark/pull/41440
-  def setJobDescriptionOrTagForBroadcastExchange(
-      sc: SparkContext,
-      broadcastExchange: BroadcastExchangeLike): Unit
-  def cancelJobGroupForBroadcastExchange(
-      sc: SparkContext,
-      broadcastExchange: BroadcastExchangeLike): Unit
-
-  // Compatible with Spark-3.5 and later
-  def getShuffleAdvisoryPartitionSize(shuffle: ShuffleExchangeLike): Option[Long] = None
-
   def getFileStatus(partition: PartitionDirectory): Seq[(FileStatus, Map[String, Any])]
 
   def isFileSplittable(relation: HadoopFsRelation, filePath: Path, sparkSchema: StructType): Boolean
@@ -134,9 +120,6 @@ trait SparkShims {
       maxSplitBytes: Long,
       partitionValues: InternalRow,
       metadata: Map[String, Any] = Map.empty): Seq[PartitionedFile]
-
-  // For compatibility with Spark-3.5.
-  def getAnalysisExceptionPlan(ae: AnalysisException): Option[LogicalPlan]
 
   def getCommonPartitionValues(batchScan: BatchScanExec): Option[Seq[(InternalRow, Int)]]
 
@@ -163,20 +146,6 @@ trait SparkShims {
       conf: SQLConf,
       schema: MessageType,
       caseSensitive: Option[Boolean] = None): ParquetFilters
-
-  /** Shim method for usages from GlutenExplainUtils.scala. */
-  def withOperatorIdMap[T](idMap: java.util.Map[QueryPlan[_], Int])(body: => T): T = {
-    body
-  }
-
-  /** Shim method for usages from GlutenExplainUtils.scala. */
-  def getOperatorId(plan: QueryPlan[_]): Option[Int]
-
-  /** Shim method for usages from GlutenExplainUtils.scala. */
-  def setOperatorId(plan: QueryPlan[_], opId: Int): Unit
-
-  /** Shim method for usages from GlutenExplainUtils.scala. */
-  def unsetOperatorId(plan: QueryPlan[_]): Unit
 
   /**
    * Returns the streaming source associated with a [[LocalTableScanExec]], if any. The `stream`

@@ -318,19 +318,17 @@ class GlutenClickHouseMergeTreeWriteStatsSuite extends GlutenClickHouseTPCDSAbst
   }
 
   test("verify mergetree delta stats") {
-    if (isSparkVersionGE("3.5")) {
-      spark.sql("create database if not exists mergetree")
-      spark.sql("use mergetree")
-      val tables = Seq(
-        "store_sales",
-        "store_returns",
-        "web_sales",
-        "web_returns",
-        "catalog_sales",
-        "catalog_returns",
-        "inventory")
-      tables.foreach(writeAndCompareDeltaStats(_))
-    }
+    spark.sql("create database if not exists mergetree")
+    spark.sql("use mergetree")
+    val tables = Seq(
+      "store_sales",
+      "store_returns",
+      "web_sales",
+      "web_returns",
+      "catalog_sales",
+      "catalog_returns",
+      "inventory")
+    tables.foreach(writeAndCompareDeltaStats(_))
   }
 
   def getDeltaSnapshot(df: DataFrame): Snapshot = {

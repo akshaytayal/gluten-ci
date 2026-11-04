@@ -17,7 +17,6 @@
 package org.apache.gluten.execution
 
 import org.apache.gluten.config.{GlutenConfig, VeloxConfig}
-import org.apache.gluten.sql.shims.SparkShimLoader
 
 import org.apache.spark.SparkConf
 import org.apache.spark.scheduler.{SparkListener, SparkListenerStageCompleted}
@@ -242,24 +241,22 @@ class VeloxMetricsSuite extends VeloxWholeStageTransformerSuite with AdaptiveSpa
   }
 
   test("Write metrics") {
-    if (SparkShimLoader.getSparkVersion.startsWith("3.4")) {
-      withSQLConf((GlutenConfig.NATIVE_WRITER_ENABLED.key, "true")) {
-        runQueryAndCompare(
-          "Insert into table metrics_t1 values(1 , 2)"
-        ) {
-          df =>
-            val plan =
-              df.queryExecution.executedPlan.asInstanceOf[CommandResultExec].commandPhysicalPlan
-            val write = find(plan) {
-              case _: WriteFilesExecTransformer => true
-              case _ => false
-            }
-            assert(write.isDefined)
-            val metrics = write.get.metrics
-            assert(metrics("physicalWrittenBytes").value > 0)
-            assert(metrics("writeIONanos").value > 0)
-            assert(metrics("numWrittenFiles").value == 1)
-        }
+    withSQLConf((GlutenConfig.NATIVE_WRITER_ENABLED.key, "true")) {
+      runQueryAndCompare(
+        "Insert into table metrics_t1 values(1 , 2)"
+      ) {
+        df =>
+          val plan =
+            df.queryExecution.executedPlan.asInstanceOf[CommandResultExec].commandPhysicalPlan
+          val write = find(plan) {
+            case _: WriteFilesExecTransformer => true
+            case _ => false
+          }
+          assert(write.isDefined)
+          val metrics = write.get.metrics
+          assert(metrics("physicalWrittenBytes").value > 0)
+          assert(metrics("writeIONanos").value > 0)
+          assert(metrics("numWrittenFiles").value == 1)
       }
     }
   }

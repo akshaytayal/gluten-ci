@@ -16,8 +16,7 @@
  */
 package org.apache.spark.sql
 
-import org.apache.gluten.sql.shims.SparkShimLoader
-
+import org.apache.spark.sql.catalyst.ExtendedAnalysisException
 import org.apache.spark.sql.catalyst.plans.logical
 import org.apache.spark.sql.catalyst.util.{sideBySide, stackTraceToString}
 import org.apache.spark.sql.classic.ClassicConversions._
@@ -62,7 +61,10 @@ trait GlutenSQLTestsTrait extends QueryTest with GlutenSQLTestsBaseTrait {
       try df
       catch {
         case ae: AnalysisException =>
-          val plan = SparkShimLoader.getSparkShims.getAnalysisExceptionPlan(ae)
+          val plan = ae match {
+            case eae: ExtendedAnalysisException => eae.plan
+            case _ => None
+          }
           if (plan.isDefined) {
             fail(s"""
                     |Failed to analyze query: $ae

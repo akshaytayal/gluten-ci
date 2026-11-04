@@ -141,12 +141,8 @@ class GlutenClickHouseMergeTreeWriteOnS3Suite extends CreateMergeTreeSuite {
         else if (objectName.contains("_commits")) hasCommits = true
     }
 
-    if (isSparkVersionGE("3.5")) {
-      assertResult(6)(countObjects(objectNames.toSeq))
-      assert(hasCommits)
-    } else {
-      assertResult(5)(countObjects(objectNames.toSeq))
-    }
+    assertResult(6)(countObjects(objectNames.toSeq))
+    assert(hasCommits)
 
     assert(metadataGlutenExist)
     assert(metadataBinExist)

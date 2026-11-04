@@ -22,9 +22,9 @@ package org.apache.spark.sql
  */
 import org.apache.gluten.backendsapi.BackendsApiManager
 import org.apache.gluten.execution.{GlutenPlan, TransformSupport, WholeStageTransformer}
-import org.apache.gluten.sql.shims.SparkShimLoader
 
 import org.apache.spark.{SPARK_VERSION_SHORT, SparkConf}
+import org.apache.spark.sql.catalyst.ExtendedAnalysisException
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.util._
@@ -180,7 +180,10 @@ abstract class GlutenQueryTest extends QueryTest with AdaptiveSparkPlanHelper {
       try ds
       catch {
         case ae: AnalysisException =>
-          val plan = SparkShimLoader.getSparkShims.getAnalysisExceptionPlan(ae)
+          val plan = ae match {
+            case eae: ExtendedAnalysisException => eae.plan
+            case _ => None
+          }
           if (plan.isDefined) {
             fail(s"""
                     |Failed to analyze query: $ae
@@ -224,7 +227,10 @@ abstract class GlutenQueryTest extends QueryTest with AdaptiveSparkPlanHelper {
       try df
       catch {
         case ae: AnalysisException =>
-          val plan = SparkShimLoader.getSparkShims.getAnalysisExceptionPlan(ae)
+          val plan = ae match {
+            case eae: ExtendedAnalysisException => eae.plan
+            case _ => None
+          }
           if (plan.isDefined) {
             fail(s"""
                     |Failed to analyze query: $ae

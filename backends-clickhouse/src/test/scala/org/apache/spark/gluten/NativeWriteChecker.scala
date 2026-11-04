@@ -17,7 +17,7 @@
 package org.apache.spark.gluten
 
 import org.apache.gluten.config.GlutenConfig
-import org.apache.gluten.execution.{CHColumnarToCarrierRowExec, GlutenClickHouseWholeStageTransformerSuite}
+import org.apache.gluten.execution.GlutenClickHouseWholeStageTransformerSuite
 
 import org.apache.spark.sql.{Dataset, Row}
 import org.apache.spark.sql.execution.{ColumnarWriteFilesExec, QueryExecution}
@@ -49,11 +49,7 @@ trait NativeWriteChecker
       override def onSuccess(funcName: String, qe: QueryExecution, duration: Long): Unit = {
         if (!nativeUsed) {
           val executedPlan = stripAQEPlan(qe.executedPlan)
-          nativeUsed = if (isSparkVersionGE("3.5")) {
-            executedPlan.find(_.isInstanceOf[ColumnarWriteFilesExec]).isDefined
-          } else {
-            executedPlan.find(_.isInstanceOf[CHColumnarToCarrierRowExec]).isDefined
-          }
+          nativeUsed = executedPlan.find(_.isInstanceOf[ColumnarWriteFilesExec]).isDefined
         }
       }
     }

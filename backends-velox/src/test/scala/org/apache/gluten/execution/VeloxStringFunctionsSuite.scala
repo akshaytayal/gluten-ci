@@ -545,7 +545,7 @@ class VeloxStringFunctionsSuite extends VeloxWholeStageTransformerSuite {
   }
 
   // TODO: fix on spark-4.1
-  testWithSpecifiedSparkVersion("split", "3.4", "3.5") {
+  testWithSpecifiedSparkVersion("split", "3.5") {
     runQueryAndCompare(
       s"select l_orderkey, l_comment, split(l_comment, '') " +
         s"from $LINEITEM_TABLE limit 5") {
@@ -667,7 +667,7 @@ class VeloxStringFunctionsSuite extends VeloxWholeStageTransformerSuite {
         s"from $LINEITEM_TABLE limit $LENGTH")(checkGlutenPlan[ProjectExecTransformer])
   }
 
-  testWithMinSparkVersion("luhn_check", "3.5") {
+  test("luhn_check") {
     runQueryAndCompare(
       s"select l_orderkey, luhn_check(l_comment) " +
         s"from $LINEITEM_TABLE limit $LENGTH")(checkGlutenPlan[ProjectExecTransformer])

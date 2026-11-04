@@ -30,7 +30,6 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.test.SharedSparkSession
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.tags.ExtendedSQLTest
-import org.apache.spark.util.SparkVersionUtil
 
 import org.apache.hadoop.fs.Path
 
@@ -129,7 +128,6 @@ class DeltaDeletionVectorHandoffSuite
   }
 
   test("Delta metadata row-index predicate should not be stripped from a native scan") {
-    assume(SparkVersionUtil.gteSpark35, "metadata row index is available in Spark 3.5+")
     withTempDir {
       tempDir =>
         val path = tempDir.getCanonicalPath
@@ -148,7 +146,6 @@ class DeltaDeletionVectorHandoffSuite
   }
 
   test("Delta generated row-index scan should fall back when metadata row index is disabled") {
-    assume(SparkVersionUtil.gteSpark35, "generated row-index coverage targets Spark 3.5+")
     withTempDir {
       tempDir =>
         val path = tempDir.getCanonicalPath
@@ -173,7 +170,6 @@ class DeltaDeletionVectorHandoffSuite
   }
 
   test("Delta generated deleted-row scan should fall back for a DV-free file") {
-    assume(SparkVersionUtil.gteSpark35, "generated DV metadata coverage targets Spark 3.5+")
     withTempDir {
       tempDir =>
         val path = tempDir.getCanonicalPath
@@ -195,7 +191,6 @@ class DeltaDeletionVectorHandoffSuite
   }
 
   test("Delta metadata row-index scan should offload when useMetadataRowIndex is false") {
-    assume(SparkVersionUtil.gteSpark35, "metadata row index is available in Spark 3.5+")
     withTempDir {
       tempDir =>
         val path = tempDir.getCanonicalPath
@@ -219,7 +214,6 @@ class DeltaDeletionVectorHandoffSuite
   }
 
   test("Delta ordinary scan should offload when metadata row index is disabled") {
-    assume(SparkVersionUtil.gteSpark35, "generated DV metadata coverage targets Spark 3.5+")
     withTempDir {
       tempDir =>
         val path = tempDir.getCanonicalPath
@@ -237,7 +231,6 @@ class DeltaDeletionVectorHandoffSuite
       test(
         "Delta DV DELETE should write correct deletion vectors, " +
           s"metadata row index=$useMetadataRowIndex") {
-        assume(SparkVersionUtil.gteSpark35, "DV DML coverage targets Spark 3.5+")
         withTempDir {
           tempDir =>
             val path = tempDir.getCanonicalPath
@@ -263,7 +256,6 @@ class DeltaDeletionVectorHandoffSuite
   }
 
   test("Delta DV repeated DELETE over an existing DV should accumulate deleted rows") {
-    assume(SparkVersionUtil.gteSpark35, "DV DML coverage targets Spark 3.5+")
     withTempDir {
       tempDir =>
         val path = new File(tempDir, "delta table with spaces").getCanonicalPath
@@ -298,7 +290,6 @@ class DeltaDeletionVectorHandoffSuite
   Seq(true, false).foreach {
     broadcastJoin =>
       test(s"Delta DV MERGE should write correct deletion vectors, broadcast join=$broadcastJoin") {
-        assume(SparkVersionUtil.gteSpark35, "DV DML coverage targets Spark 3.5+")
         withTempDir {
           tempDir =>
             val path = tempDir.getCanonicalPath
@@ -336,7 +327,6 @@ class DeltaDeletionVectorHandoffSuite
   }
 
   test("Delta DV DML row-index scan should stay on Spark when disabled") {
-    assume(SparkVersionUtil.gteSpark35, "DV DML coverage targets Spark 3.5+")
     withTempDir {
       tempDir =>
         val path = tempDir.getCanonicalPath
@@ -371,7 +361,6 @@ class DeltaDeletionVectorHandoffSuite
   }
 
   test("Delta non-DV DML should offload with a user column named row_index when disabled") {
-    assume(SparkVersionUtil.gteSpark35, "DV DML coverage targets Spark 3.5+")
     withTempDir {
       tempDir =>
         val path = tempDir.getCanonicalPath

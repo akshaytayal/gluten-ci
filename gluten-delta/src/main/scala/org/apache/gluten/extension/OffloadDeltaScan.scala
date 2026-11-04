@@ -20,24 +20,22 @@ import org.apache.gluten.execution.DeltaScanTransformer
 import org.apache.gluten.extension.columnar.FallbackTags
 import org.apache.gluten.extension.columnar.offload.OffloadSingleNode
 
-import org.apache.spark.sql.delta.{DeltaParquetFileFormat, SnapshotDescriptor}
-import org.apache.spark.sql.delta.commands.DeletionVectorUtils.deletionVectorsReadable
-import org.apache.spark.sql.delta.files.{CdcAddFileIndex, TahoeBatchFileIndex, TahoeFileIndex, TahoeRemoveFileIndex}
-import org.apache.spark.sql.delta.stats.PreparedDeltaFileIndex
+import org.apache.spark.sql.delta.DeltaParquetFileFormat
+import org.apache.spark.sql.delta.files.TahoeBatchFileIndex
 import org.apache.spark.sql.execution.{FileSourceScanExec, SparkPlan}
 import org.apache.spark.sql.execution.datasources.FileFormat
+import org.apache.spark.sql.execution.datasources.parquet.ParquetFileFormat
 import org.apache.spark.sql.types.{DataType, StructType}
-import org.apache.spark.util.SparkVersionUtil
 
 case class OffloadDeltaScan(enableNativeDmlRowIndexScan: Boolean) extends OffloadSingleNode {
   private val DeletionVectorsUseMetadataRowIndexKey =
     "spark.databricks.delta.deletionVectors.useMetadataRowIndex"
 
-  // Spark 3.5+ exposes this as ParquetFileFormat.ROW_INDEX_TEMPORARY_COLUMN_NAME.
-  private val parquetTemporaryRowIndexColumnName = "_tmp_metadata_row_index"
   // Row-index columns used by Delta DML with either row-index generation path.
   private val generatedRowIndexColumnNames =
-    Set(DeltaParquetFileFormat.ROW_INDEX_COLUMN_NAME, parquetTemporaryRowIndexColumnName)
+    Set(
+      DeltaParquetFileFormat.ROW_INDEX_COLUMN_NAME,
+      ParquetFileFormat.ROW_INDEX_TEMPORARY_COLUMN_NAME)
   private val generatedDeletionVectorMetadataColumnNames =
     Set(
       DeltaParquetFileFormat.ROW_INDEX_COLUMN_NAME,
@@ -55,9 +53,6 @@ case class OffloadDeltaScan(enableNativeDmlRowIndexScan: Boolean) extends Offloa
       scan
     case scan: FileSourceScanExec if shouldFallbackDeletionVectorDmlScan(scan) =>
       FallbackTags.add(scan, "fallback Delta DV DML row-index scan by configuration")
-      scan
-    case scan: FileSourceScanExec if shouldFallbackSpark34DeletionVectorScan(scan) =>
-      FallbackTags.add(scan, "fallback Spark 3.4 Delta DV scan")
       scan
     case scan: FileSourceScanExec
         if DeltaScanUtils.isDeltaScan(scan) &&
@@ -126,20 +121,8 @@ case class OffloadDeltaScan(enableNativeDmlRowIndexScan: Boolean) extends Offloa
     }
   }
 
-  private def shouldFallbackSpark34DeletionVectorScan(scan: FileSourceScanExec): Boolean = {
-    if (SparkVersionUtil.gteSpark35) {
-      return false
-    }
-
-    containsDeletionVector(scan)
-  }
-
   private def shouldFallbackGeneratedDeletionVectorMetadataScan(
       scan: FileSourceScanExec): Boolean = {
-    if (!SparkVersionUtil.gteSpark35) {
-      return false
-    }
-
     // Without metadata row indexes, Delta's JVM reader generates the internal DV columns.
     // Native scans bypass that synthesis; Spark's own metadata row index remains supported.
     val useMetadataRowIndex =
@@ -147,23 +130,5 @@ case class OffloadDeltaScan(enableNativeDmlRowIndexScan: Boolean) extends Offloa
         .getConfString(DeletionVectorsUseMetadataRowIndexKey, "true")
         .toBoolean
     !useMetadataRowIndex && scanReadsGeneratedDeletionVectorMetadataColumn(scan)
-  }
-
-  private def containsDeletionVector(scan: FileSourceScanExec): Boolean = {
-    scan.relation.location match {
-      // CDF indexes expose the exact actions in the requested range. Use those instead of the
-      // table-level protocol capability so a DV-capable table can still offload DV-free ranges.
-      case index: TahoeRemoveFileIndex =>
-        index.filesByVersion.exists(_.actions.exists(_.deletionVector != null))
-      case index: CdcAddFileIndex =>
-        index.addFiles.exists(_.deletionVector != null)
-      case preparedIndex: PreparedDeltaFileIndex =>
-        preparedIndex.preparedScan.files.exists(_.deletionVector != null)
-      case index: TahoeFileIndex =>
-        val snapshot = index.asInstanceOf[SnapshotDescriptor]
-        deletionVectorsReadable(snapshot.protocol, snapshot.metadata)
-      case _ =>
-        false
-    }
   }
 }

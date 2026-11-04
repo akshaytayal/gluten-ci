@@ -59,7 +59,6 @@ import org.apache.spark.sql.execution.window._
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.vectorized.ColumnarBatch
-import org.apache.spark.util.SparkVersionUtil
 
 import org.apache.commons.lang3.ClassUtils
 
@@ -1042,9 +1041,8 @@ class CHSparkPlanExecApi extends SparkPlanExecApi with Logging {
     CHColumnarToCarrierRowExec.enforce(plan)
 
   override def isRowIndexMetadataColumn(columnName: String): Boolean = {
-    SparkShimLoader.getSparkShims.isRowIndexMetadataColumn(
-      columnName) || (SparkVersionUtil.gteSpark35 && columnName.equalsIgnoreCase(
-      "__delta_internal_is_row_deleted"))
+    SparkShimLoader.getSparkShims.isRowIndexMetadataColumn(columnName) ||
+    columnName.equalsIgnoreCase("__delta_internal_is_row_deleted")
   }
 
   override def genTimestampAddTransformer(

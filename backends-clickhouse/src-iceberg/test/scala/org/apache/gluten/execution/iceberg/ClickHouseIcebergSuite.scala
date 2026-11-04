@@ -215,7 +215,7 @@ class ClickHouseIcebergSuite extends GlutenClickHouseWholeStageTransformerSuite 
     }
   }
 
-  testWithMinSparkVersion("iceberg bucketed join partition value not exists", "3.5") {
+  test("iceberg bucketed join partition value not exists") {
     val leftTable = "p_str_tb"
     val rightTable = "p_int_tb"
     withTable(leftTable, rightTable) {

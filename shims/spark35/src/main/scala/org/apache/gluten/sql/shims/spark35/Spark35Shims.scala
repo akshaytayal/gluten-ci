@@ -21,12 +21,10 @@ import org.apache.gluten.expression.{ExpressionNames, Sig}
 import org.apache.gluten.sql.shims.SparkShims
 import org.apache.gluten.utils.ExceptionUtils
 
-import org.apache.spark._
-import org.apache.spark.sql.{AnalysisException, SparkSession}
-import org.apache.spark.sql.catalyst.{ExtendedAnalysisException, InternalRow}
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate._
-import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.plans.physical.{KeyGroupedPartitioning, Partitioning}
 import org.apache.spark.sql.catalyst.util.InternalRowComparableWrapper
@@ -36,7 +34,6 @@ import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.execution.datasources.parquet.{ParquetFileFormat, ParquetFilters}
 import org.apache.spark.sql.execution.datasources.v2.{BatchScanExec, DataSourceV2ScanExecBase}
-import org.apache.spark.sql.execution.exchange.{BroadcastExchangeLike, ShuffleExchangeLike}
 import org.apache.spark.sql.execution.window.{Final, GlutenFinal, GlutenPartial, Partial, WindowGroupLimitExec, WindowGroupLimitExecShim}
 import org.apache.spark.sql.internal.{LegacyBehaviorPolicy, SQLConf}
 import org.apache.spark.sql.types.{IntegerType, LongType, StructField, StructType}
@@ -143,23 +140,6 @@ class Spark35Shims extends SparkShims {
     )
   }
 
-  override def setJobDescriptionOrTagForBroadcastExchange(
-      sc: SparkContext,
-      broadcastExchange: BroadcastExchangeLike): Unit = {
-    // Setup a job tag here so later it may get cancelled by tag if necessary.
-    sc.addJobTag(broadcastExchange.jobTag)
-    sc.setInterruptOnCancel(true)
-  }
-
-  override def cancelJobGroupForBroadcastExchange(
-      sc: SparkContext,
-      broadcastExchange: BroadcastExchangeLike): Unit = {
-    sc.cancelJobsWithTag(broadcastExchange.jobTag)
-  }
-
-  override def getShuffleAdvisoryPartitionSize(shuffle: ShuffleExchangeLike): Option[Long] =
-    shuffle.advisoryPartitionSize
-
   def getFileStatus(partition: PartitionDirectory): Seq[(FileStatus, Map[String, Any])] =
     partition.files.map(f => (f.fileStatus, f.metadata))
 
@@ -206,14 +186,6 @@ class Spark35Shims extends SparkShims {
       partitionValues)
   }
 
-  def getAnalysisExceptionPlan(ae: AnalysisException): Option[LogicalPlan] = {
-    ae match {
-      case eae: ExtendedAnalysisException =>
-        eae.plan
-      case _ =>
-        None
-    }
-  }
   override def getCommonPartitionValues(
       batchScan: BatchScanExec): Option[Seq[(InternalRow, Int)]] = {
     batchScan.spjParams.commonPartitionValues
@@ -349,30 +321,6 @@ class Spark35Shims extends SparkShims {
       caseSensitive.getOrElse(conf.caseSensitiveAnalysis),
       RebaseSpec(LegacyBehaviorPolicy.CORRECTED)
     )
-  }
-
-  override def withOperatorIdMap[T](idMap: java.util.Map[QueryPlan[_], Int])(body: => T): T = {
-    val prevIdMap = QueryPlan.localIdMap.get()
-    try {
-      QueryPlan.localIdMap.set(idMap)
-      body
-    } finally {
-      QueryPlan.localIdMap.set(prevIdMap)
-    }
-  }
-
-  override def getOperatorId(plan: QueryPlan[_]): Option[Int] = {
-    Option(QueryPlan.localIdMap.get().get(plan))
-  }
-
-  override def setOperatorId(plan: QueryPlan[_], opId: Int): Unit = {
-    val map = QueryPlan.localIdMap.get()
-    assert(!map.containsKey(plan))
-    map.put(plan, opId)
-  }
-
-  override def unsetOperatorId(plan: QueryPlan[_]): Unit = {
-    QueryPlan.localIdMap.get().remove(plan)
   }
 
   override def isParquetFileEncrypted(footer: ParquetMetadata): Boolean = {

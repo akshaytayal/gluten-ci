@@ -235,7 +235,6 @@ class UDFPartialProjectSuite extends WholeStageTransformerSuite {
   testWithSpecifiedSparkVersion(
     "only the child and parent of the project both support Columnar," +
       "just add ColumnarPartialProjectExec for the project",
-    "3.4",
     "3.5") {
     Seq("false", "true").foreach {
       enableNativeScanAndWriter =>

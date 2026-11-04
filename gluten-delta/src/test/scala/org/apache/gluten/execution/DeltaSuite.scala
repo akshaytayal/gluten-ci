@@ -23,7 +23,6 @@ import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.delta.DeltaLog
 import org.apache.spark.sql.types._
-import org.apache.spark.util.SparkVersionUtil
 
 import org.apache.hadoop.fs.Path
 
@@ -620,19 +619,15 @@ abstract class DeltaSuite extends WholeStageTransformerSuite {
         spark.sql(s"DELETE FROM delta.`$path` WHERE id IN (${values2.mkString(", ")})")
         val df = spark.read.format("delta").load(path)
         val executedPlan = df.queryExecution.executedPlan
-        if (SparkVersionUtil.gteSpark35) {
-          assert(executedPlan.collect { case _: DeltaScanTransformer => true }.nonEmpty)
-          val planText = executedPlan.toString()
-          assert(!planText.contains("__delta_internal_is_row_deleted"))
-          assert(!planText.contains("__delta_internal_row_index"))
-        } else {
-          assert(executedPlan.collect { case _: DeltaScanTransformer => true }.isEmpty)
-        }
+        assert(executedPlan.collect { case _: DeltaScanTransformer => true }.nonEmpty)
+        val planText = executedPlan.toString()
+        assert(!planText.contains("__delta_internal_is_row_deleted"))
+        assert(!planText.contains("__delta_internal_row_index"))
         checkAnswer(df, df1)
     }
   }
 
-  testWithMinSparkVersion("deletion vector on partitioned table", "3.4") {
+  test("deletion vector on partitioned table") {
     withTempPath {
       p =>
         import testImplicits._
@@ -661,12 +656,10 @@ abstract class DeltaSuite extends WholeStageTransformerSuite {
           deletionVectors.exists(_.storageType == "u"),
           "DELETE should produce a table-root-relative UUID deletion vector")
         val df = spark.read.format("delta").load(path)
-        if (SparkVersionUtil.gteSpark35) {
-          assert(
-            df.queryExecution.executedPlan
-              .collect { case _: DeltaScanTransformer => true }
-              .nonEmpty)
-        }
+        assert(
+          df.queryExecution.executedPlan
+            .collect { case _: DeltaScanTransformer => true }
+            .nonEmpty)
         checkAnswer(df, Seq((1, "a"), (4, "b"), (5, "a")).toDF("id", "region"))
     }
   }
@@ -707,12 +700,10 @@ abstract class DeltaSuite extends WholeStageTransformerSuite {
         deletionVectors.exists(_.storageType == "u"),
         "DELETE on the clone should produce a clone-root-relative UUID deletion vector")
       val df = spark.table("dv_clone_target")
-      if (SparkVersionUtil.gteSpark35) {
-        assert(
-          df.queryExecution.executedPlan
-            .collect { case _: DeltaScanTransformer => true }
-            .nonEmpty)
-      }
+      assert(
+        df.queryExecution.executedPlan
+          .collect { case _: DeltaScanTransformer => true }
+          .nonEmpty)
       // The clone's DELETE must not affect the source table.
       checkAnswer(
         spark.table("dv_clone_source"),

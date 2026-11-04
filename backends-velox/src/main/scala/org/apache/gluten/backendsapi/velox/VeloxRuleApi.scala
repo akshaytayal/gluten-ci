@@ -30,7 +30,6 @@ import org.apache.gluten.extension.columnar.validator.{Validator, Validators}
 import org.apache.gluten.extension.injector.{Injector, SparkInjector}
 import org.apache.gluten.extension.injector.GlutenInjector.LegacyInjector
 import org.apache.gluten.extension.joinagg.{ImplementJoinAggregate, PushAggregateThroughJoinBatch}
-import org.apache.gluten.sql.shims.SparkShimLoader
 
 import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.datasources.noop.GlutenNoopWriterRule
@@ -63,10 +62,6 @@ object VeloxRuleApi {
 
     if (!BackendsApiManager.getSettings.enableJoinKeysRewrite()) {
       injector.injectPlannerStrategy(_ => org.apache.gluten.extension.GlutenJoinKeysCapture())
-    }
-
-    if (BackendsApiManager.getSettings.supportAppendDataExec()) {
-      injector.injectPlannerStrategy(SparkShimLoader.getSparkShims.getRewriteCreateTableAsSelect(_))
     }
 
     if (VeloxConfig.nativeUDFBypassRegistration) {

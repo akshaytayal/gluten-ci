@@ -1504,7 +1504,7 @@ class GlutenClickHouseExcelFormatSuite extends GlutenClickHouseWholeStageTransfo
   }
 
   // TODO: pass spark configuration to FileFormatWriter in Spark 3.3 and 3.2
-  testWithMinSparkVersion("write succeed even if set wrong snappy compression codec level", "3.5") {
+  test("write succeed even if set wrong snappy compression codec level") {
     // TODO: remove duplicated test codes
     val tablePath = hdfsHelper.independentHdfsURL("failed_test")
     val format = "parquet"

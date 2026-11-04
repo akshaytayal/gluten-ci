@@ -20,7 +20,6 @@ import org.apache.gluten.backendsapi.BackendsApiManager
 import org.apache.gluten.config.ShuffleWriterType
 import org.apache.gluten.execution.{CPUStageMode, StageExecutionMode, ValidatablePlan, ValidationResult}
 import org.apache.gluten.extension.columnar.transition.Convention
-import org.apache.gluten.sql.shims.SparkShimLoader
 
 import org.apache.spark._
 import org.apache.spark.internal.Logging
@@ -214,7 +213,7 @@ object ColumnarShuffleExchangeExec extends Logging {
       child,
       plan.shuffleOrigin,
       shuffleOutputAttributes,
-      advisoryPartitionSize = SparkShimLoader.getSparkShims.getShuffleAdvisoryPartitionSize(plan)
+      advisoryPartitionSize = plan.advisoryPartitionSize
     )
   }
 }

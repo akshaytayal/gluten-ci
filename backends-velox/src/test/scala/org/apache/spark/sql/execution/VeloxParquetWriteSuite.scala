@@ -46,7 +46,7 @@ class VeloxParquetWriteSuite extends VeloxWholeStageTransformerSuite with WriteU
       "snappy" -> ".snappy",
       "gzip" -> ".gz",
       "lzo" -> ".lzo",
-      "lz4" -> (if (isSparkVersionGE("3.5")) ".lz4hadoop" else ".lz4"),
+      "lz4" -> ".lz4hadoop",
       "brotli" -> ".br",
       "zstd" -> ".zstd"
     )

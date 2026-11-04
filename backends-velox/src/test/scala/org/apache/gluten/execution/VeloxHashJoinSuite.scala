@@ -17,7 +17,6 @@
 package org.apache.gluten.execution
 
 import org.apache.gluten.config.{GlutenConfig, VeloxConfig}
-import org.apache.gluten.sql.shims.SparkShimLoader
 
 import org.apache.spark.{SparkConf, SparkException}
 import org.apache.spark.sql.Row
@@ -118,11 +117,7 @@ class VeloxHashJoinSuite extends VeloxWholeStageTransformerSuite {
       // The computing is combined into one single whole stage transformer.
       val wholeStages = plan.collect { case wst: WholeStageTransformer => wst }
 
-      if (SparkShimLoader.getSparkVersion.startsWith("3.4.")) {
-        assert(wholeStages.length == 3)
-      } else {
-        assert(wholeStages.length == 5)
-      }
+      assert(wholeStages.length == 5)
 
       // Join should be in `TransformContext`
       val countSHJ = wholeStages.map {

@@ -20,7 +20,6 @@ import org.apache.gluten.backendsapi.BackendsApiManager
 import org.apache.gluten.execution.ValidatablePlan
 import org.apache.gluten.extension.columnar.transition.{Convention, ConventionReq}
 import org.apache.gluten.metrics.GlutenTimeMetric
-import org.apache.gluten.sql.shims.SparkShimLoader
 
 import org.apache.spark.{broadcast, SparkException}
 import org.apache.spark.SparkContextUtils
@@ -62,7 +61,9 @@ case class ColumnarBroadcastExchangeExec(mode: BroadcastMode, child: SparkPlan)
       session,
       BroadcastExchangeExec.executionContext) {
       try {
-        SparkShimLoader.getSparkShims.setJobDescriptionOrTagForBroadcastExchange(sparkContext, this)
+        // Setup a job tag here so later it may get cancelled by tag if necessary.
+        sparkContext.addJobTag(jobTag)
+        sparkContext.setInterruptOnCancel(true)
         val relation = GlutenTimeMetric.millis(longMetric("collectTime")) {
           _ =>
             // this created relation ignore HashedRelationBroadcastMode isNullAware, because we
@@ -163,7 +164,7 @@ case class ColumnarBroadcastExchangeExec(mode: BroadcastMode, child: SparkPlan)
       case ex: TimeoutException =>
         logError(s"Could not execute broadcast in $timeout secs.", ex)
         if (!relationFuture.isDone) {
-          SparkShimLoader.getSparkShims.cancelJobGroupForBroadcastExchange(sparkContext, this)
+          sparkContext.cancelJobsWithTag(jobTag)
           relationFuture.cancel(true)
         }
         throw new SparkException(

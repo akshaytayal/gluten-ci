@@ -18,7 +18,6 @@ package org.apache.spark.sql.execution
 
 import org.apache.gluten.execution.{GlutenPlan, WholeStageTransformer}
 import org.apache.gluten.extension.columnar.FallbackTags
-import org.apache.gluten.sql.shims.SparkShimLoader
 import org.apache.gluten.utils.PlanUtil
 
 import org.apache.spark.sql.AnalysisException
@@ -77,7 +76,7 @@ object GlutenExplainUtils extends AdaptiveSparkPlanHelper {
       p: SparkPlan,
       reason: String,
       fallbackNodeToReason: mutable.HashMap[String, String]): Unit = {
-    SparkShimLoader.getSparkShims.getOperatorId(p).foreach {
+    getOperatorId(p).foreach {
       opId =>
         // e.g., 002 project, it is used to help analysis by `substring(4)`
         val formattedNodeName = f"$opId%03d ${p.nodeName}"
@@ -215,7 +214,7 @@ object GlutenExplainUtils extends AdaptiveSparkPlanHelper {
       append: String => Unit,
       collectFallbackFunc: Option[QueryPlan[_] => FallbackInfo] = None): FallbackInfo =
     synchronized {
-      SparkShimLoader.getSparkShims.withOperatorIdMap(
+      withOperatorIdMap(
         new java.util.IdentityHashMap[QueryPlan[_], Int]()) {
         try {
           // Initialize a reference-unique set of Operators to avoid accdiental overwrites and to
@@ -348,7 +347,7 @@ object GlutenExplainUtils extends AdaptiveSparkPlanHelper {
       }
       visited.add(plan)
       currentOperationID += 1
-      SparkShimLoader.getSparkShims.setOperatorId(plan, currentOperationID)
+      setOperatorId(plan, currentOperationID)
     }
 
     plan.foreachUp {
@@ -428,12 +427,12 @@ object GlutenExplainUtils extends AdaptiveSparkPlanHelper {
    * value.
    */
   private def getOpId(plan: QueryPlan[_]): String = {
-    SparkShimLoader.getSparkShims.getOperatorId(plan).map(v => s"$v").getOrElse("unknown")
+    getOperatorId(plan).map(v => s"$v").getOrElse("unknown")
   }
 
   private def removeTags(plan: QueryPlan[_]): Unit = {
     def remove(p: QueryPlan[_], children: Seq[QueryPlan[_]]): Unit = {
-      SparkShimLoader.getSparkShims.unsetOperatorId(p)
+      unsetOperatorId(p)
       children.foreach(removeTags)
     }
 
@@ -443,5 +442,29 @@ object GlutenExplainUtils extends AdaptiveSparkPlanHelper {
       case cmd: CommandResultExec => remove(cmd, Seq(cmd.commandPhysicalPlan))
       case plan: QueryPlan[_] => remove(plan, plan.innerChildren)
     }
+  }
+
+  private def withOperatorIdMap[T](idMap: java.util.Map[QueryPlan[_], Int])(body: => T): T = {
+    val prevIdMap = QueryPlan.localIdMap.get()
+    try {
+      QueryPlan.localIdMap.set(idMap)
+      body
+    } finally {
+      QueryPlan.localIdMap.set(prevIdMap)
+    }
+  }
+
+  private def getOperatorId(plan: QueryPlan[_]): Option[Int] = {
+    Option(QueryPlan.localIdMap.get().get(plan))
+  }
+
+  private def setOperatorId(plan: QueryPlan[_], opId: Int): Unit = {
+    val map = QueryPlan.localIdMap.get()
+    assert(!map.containsKey(plan))
+    map.put(plan, opId)
+  }
+
+  private def unsetOperatorId(plan: QueryPlan[_]): Unit = {
+    QueryPlan.localIdMap.get().remove(plan)
   }
 }

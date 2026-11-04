@@ -19,7 +19,6 @@ package org.apache.gluten.execution
 import org.apache.gluten.config.VeloxDeltaConfig
 
 import org.apache.spark.sql.{DataFrame, Row}
-import org.apache.spark.util.SparkVersionUtil
 
 class VeloxDeltaSuite extends DeltaSuite {
   test("delta: change data feed scan offload can be disabled") {
@@ -80,7 +79,7 @@ class VeloxDeltaSuite extends DeltaSuite {
       }
   }
 
-  testWithMinSparkVersion("map-key pruning on delta scan with and without deletion vector", "3.4") {
+  test("map-key pruning on delta scan with and without deletion vector") {
     withTempPath {
       p =>
         val path = p.getCanonicalPath
@@ -120,16 +119,14 @@ class VeloxDeltaSuite extends DeltaSuite {
         spark.sql(
           s"ALTER TABLE delta.`$path` SET TBLPROPERTIES ('delta.enableDeletionVectors' = true)")
         spark.sql(s"DELETE FROM delta.`$path` WHERE id % 10 = 0")
-        if (SparkVersionUtil.gteSpark35) {
-          withSQLConf(pruningFlag -> "true", "spark.sql.adaptive.enabled" -> "false") {
-            runQueryAndCompare(sql) {
-              df =>
-                assert(
-                  df.queryExecution.executedPlan
-                    .collect { case _: DeltaScanTransformer => true }
-                    .nonEmpty)
-                assert(scanSubfields(df).contains("m"))
-            }
+        withSQLConf(pruningFlag -> "true", "spark.sql.adaptive.enabled" -> "false") {
+          runQueryAndCompare(sql) {
+            df =>
+              assert(
+                df.queryExecution.executedPlan
+                  .collect { case _: DeltaScanTransformer => true }
+                  .nonEmpty)
+              assert(scanSubfields(df).contains("m"))
           }
         }
     }
